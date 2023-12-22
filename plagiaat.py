@@ -1,23 +1,30 @@
 import os
 import re
+import ast
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from spellchecker import SpellChecker
+
+class ASTTransformer(ast.NodeTransformer):
+    pass
 
 def find_identical_files(folders, auteurs):
     matrix_with_comments = {auteur: {andere_auteur: [] for andere_auteur in auteurs} for auteur in auteurs}
-    
-        auteurs_dir = os.path.join(folders, auteurs)
+
+    for i, auteur in enumerate(auteurs):
         auteurs_dir = os.path.join(folders, auteur)
         if not os.path.exists(auteurs_dir):
             print(f"Error: Directory for auteur '{auteur}' not found.")
             continue
 
         auteur_bestanden = os.listdir(auteurs_dir)
-        
+
         for other_author in auteurs[i+1:]:
             andere_auteurs = os.path.join(folders, other_author)
             if not os.path.exists(andere_auteurs):
                 print(f"Error: Directory for auteurs '{other_author}' not found.")
                 continue
+
+            identical_ast_files = []
 
             for file in auteur_bestanden:
                 bestand_pad = os.path.join(auteurs_dir, file)
@@ -27,18 +34,16 @@ def find_identical_files(folders, auteurs):
                     content = open(bestand_pad, 'r').read()
                     other_content = open(other_file_path, 'r').read()
 
-                    if content == other_content:
-                        matrix_with_comments[auteur][other_author].append(f"Files '{file}' are identical.")
-                    else:
-                        comment_pattern = re.compile(r'#(.+)$', re.MULTILINE)
-                        comments_in_file = set(comment_pattern.findall(content))
-                        comments_in_other_file = set(comment_pattern.findall(other_content))
+                    content_tree = ast.parse(content)
+                    other_content_tree = ast.parse(other_content)
 
-                        identical_comments = comments_in_file.intersection(comments_in_other_file)
+                    if ast.dump(content_tree) == ast.dump(other_content_tree):
+                        identical_ast_files.append(file)
 
-                        if identical_comments:
-                            comment_entries = [f"Identical comment: '{comment}'" for comment in identical_comments]
-                            matrix_with_comments[auteur][other_author].extend(comment_entries)
+            if identical_ast_files:
+                matrix_with_comments[auteur][other_author].append(f"Identical AST in files: {', '.join(identical_ast_files)}")
+            else:
+                matrix_with_comments[auteur][other_author].append("No identical AST found in any files.")
 
     return matrix_with_comments
 
@@ -58,7 +63,7 @@ output_file_name = input("Enter the desired output filename (without extension):
 
 template = env.get_template("outputtemplate.html")
 
-html_output = template.render(matrix=matrix_met_opmerkingen, auteurs=auteurs, aliases=alias_mapping)
+html_output= template.render(matrix=matrix_met_opmerkingen, auteurs=auteurs, aliases=alias_mapping)
 
 output_file_path = f"{output_file_name}.html"
 with open(output_file_path, "w") as output_file:
