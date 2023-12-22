@@ -1,1 +1,4 @@
-print("Hello from Auteur1!")
+variable_name = "Hello, World!"
+print(variable_name)
+
+
