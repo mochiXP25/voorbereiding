@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrixweergave</title>
+</head>
+<body>
+    <table border="1">
+        <tr>
+            <th></th>
+            {% for auteur in auteurs %}
+                <th>{{ auteur }}</th>
+            {% endfor %}
+        </tr>
+        {% for auteur, opmerkingen in matrix.items() %}
+            <tr>
+                <th>{{ auteur }}</th>
+                {% for andere_auteur in auteurs %}
+                    <td>{{ opmerkingen[andere_auteur]|default([])|join(', ') }}</td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
