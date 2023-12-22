@@ -1,3 +1,5 @@
-variable_name = "Hello, World!"
-print(variable_name)
+def greet(name):
+    print(f"Hi, {name}!")
 
+if __name__ == "__main__":
+    greet("Universe")
