@@ -1,13 +1,14 @@
 import os
+import re
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-def find_identical_files(folders):
+def find_identical_files(folders, auteurs):
     matrix_with_comments = {auteur: {andere_auteur: [] for andere_auteur in auteurs} for auteur in auteurs}
     
-    for i, auteurs in enumerate(auteurs):
         auteurs_dir = os.path.join(folders, auteurs)
+        auteurs_dir = os.path.join(folders, auteur)
         if not os.path.exists(auteurs_dir):
-            print(f"Error: Directory for auteurs '{auteurs}' not found.")
+            print(f"Error: Directory for auteur '{auteur}' not found.")
             continue
 
         auteur_bestanden = os.listdir(auteurs_dir)
@@ -27,14 +28,24 @@ def find_identical_files(folders):
                     other_content = open(other_file_path, 'r').read()
 
                     if content == other_content:
-                        matrix_with_comments[auteurs][other_author].append(f"Files '{file}' are identical.")
+                        matrix_with_comments[auteur][other_author].append(f"Files '{file}' are identical.")
+                    else:
+                        comment_pattern = re.compile(r'#(.+)$', re.MULTILINE)
+                        comments_in_file = set(comment_pattern.findall(content))
+                        comments_in_other_file = set(comment_pattern.findall(other_content))
+
+                        identical_comments = comments_in_file.intersection(comments_in_other_file)
+
+                        if identical_comments:
+                            comment_entries = [f"Identical comment: '{comment}'" for comment in identical_comments]
+                            matrix_with_comments[auteur][other_author].extend(comment_entries)
 
     return matrix_with_comments
 
 auteurs = ["Auteur1", "Auteur2", "Auteur3", "Auteur4"]
 base_directory = input("Enter the path to the folders for analysis: ")
 
-matrix_met_opmerkingen = find_identical_files(base_directory)
+matrix_met_opmerkingen = find_identical_files(base_directory, auteurs)
 
 alias_mapping = {auteur: f"student_{i + 1}" for i, auteur in enumerate(auteurs)}
 
